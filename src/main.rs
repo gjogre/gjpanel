@@ -2,7 +2,7 @@ use app::App;
 
 mod app;
 mod config;
-mod fonts;
+mod fontloader;
 mod widgets;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

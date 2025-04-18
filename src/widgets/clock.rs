@@ -1,5 +1,6 @@
-use crate::config::ClockConfig;
-use crate::{fonts, widgets::GJWidget};
+use crate::fontloader;
+use crate::widgets::GJWidget;
+use crate::{config::ClockConfig, fontloader::load_font_by_name_or_err};
 use chrono::Local;
 use figlet_rs::FIGfont;
 use ratatui::{
@@ -17,8 +18,8 @@ pub struct ClockWidget {
 
 impl ClockWidget {
     pub fn new(config: ClockConfig) -> Self {
-        let font_time = fonts::load_font_by_name_or_err("large");
-        let font_date = fonts::load_font_by_name_or_err("small");
+        let font_time = load_font_by_name_or_err("large");
+        let font_date = load_font_by_name_or_err("small");
         Self {
             font_time,
             font_date,
@@ -48,8 +49,8 @@ impl GJWidget for ClockWidget {
         let time_str = now.format(&self.config.time_format).to_string();
         let date_str = now.format(&self.config.date_format).to_string();
 
-        let time_fig = fonts::render_figlet_text(&self.font_time, &time_str);
-        let date_fig = fonts::render_figlet_text(&self.font_date, &date_str);
+        let time_fig = fontloader::render_figlet_text(&self.font_time, &time_str);
+        let date_fig = fontloader::render_figlet_text(&self.font_date, &date_str);
 
         let mut text = Text::default();
 
