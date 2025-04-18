@@ -6,3 +6,4 @@ date_font = "small"
 
 [weather]
 font = "small"
+location = "Hyvinkää"

@@ -28,8 +28,12 @@ impl WeatherWidget {
         }
     }
 
-    fn fetch_weather() -> String {
-        match Command::new("sh").arg("-c").arg("./weather.sh").output() {
+    fn fetch_weather(location: String) -> String {
+        match Command::new("sh")
+            .arg("-c")
+            .arg(format!("./sh/weather.sh {}", location))
+            .output()
+        {
             Ok(output) if output.status.success() => {
                 String::from_utf8_lossy(&output.stdout).trim().to_string()
             }
@@ -48,7 +52,7 @@ impl WeatherWidget {
 
 impl GJWidget for WeatherWidget {
     fn poll(&mut self) {
-        self.state = Self::fetch_weather();
+        self.state = Self::fetch_weather(self.config.location.clone());
     }
 
     fn render(&self) -> Paragraph {

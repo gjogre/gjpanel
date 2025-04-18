@@ -11,6 +11,7 @@ pub struct ClockConfig {
 #[derive(Debug, Deserialize)]
 pub struct WeatherConfig {
     pub font: String,
+    pub location: String,
 }
 #[derive(Debug, Deserialize)]
 pub struct Config {
