@@ -1,3 +1,4 @@
+use crate::config::load_config;
 use crate::widgets::{GJWidget, clock::ClockWidget, weather::WeatherWidget};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode},
@@ -9,6 +10,8 @@ use std::io::stdout;
 use std::time::{Duration, Instant};
 
 pub fn run_app() -> Result<(), Box<dyn std::error::Error>> {
+    let config = load_config("gjwidgets.toml");
+
     enable_raw_mode()?;
     let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -17,7 +20,7 @@ pub fn run_app() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut widgets: Vec<(Box<dyn GJWidget>, Duration, Instant)> = vec![
         (
-            Box::new(ClockWidget::new()),
+            Box::new(ClockWidget::new(config.clock)),
             Duration::from_secs(1),
             Instant::now(),
         ),

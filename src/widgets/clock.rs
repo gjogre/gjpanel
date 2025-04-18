@@ -1,3 +1,4 @@
+use crate::config::ClockConfig;
 use crate::{fonts, widgets::GJWidget};
 use chrono::Local;
 use figlet_rs::FIGfont;
@@ -9,17 +10,19 @@ use ratatui::{
 };
 
 pub struct ClockWidget {
+    pub config: ClockConfig,
     font_time: FIGfont,
     font_date: FIGfont,
 }
 
 impl ClockWidget {
-    pub fn new() -> Self {
+    pub fn new(config: ClockConfig) -> Self {
         let (font_time, font_date) =
             fonts::load_fonts_with_fallback(None, None).expect("Failed to load figlet fonts");
         Self {
             font_time,
             font_date,
+            config,
         }
     }
 }
@@ -38,12 +41,12 @@ impl GJWidget for ClockWidget {
             fg: Some(Color::Blue),
             bg: Some(Color::default()),
             underline_color: Some(Color::default()),
-            add_modifier: Modifier::DIM,
+            add_modifier: Modifier::DIM | Modifier::BOLD,
             sub_modifier: Modifier::empty(),
         };
         let now = Local::now();
-        let time_str = now.format("%H:%M").to_string();
-        let date_str = now.format("%d.%m.%Y").to_string();
+        let time_str = now.format(&self.config.time_format).to_string();
+        let date_str = now.format(&self.config.date_format).to_string();
 
         let time_fig = fonts::render_figlet_text(&self.font_time, &time_str);
         let date_fig = fonts::render_figlet_text(&self.font_date, &date_str);
