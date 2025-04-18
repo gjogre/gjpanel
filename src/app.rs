@@ -1,22 +1,14 @@
 use crate::config::load_config;
 use crate::widgets::{GJWidget, clock::ClockWidget, weather::WeatherWidget};
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, KeyCode},
-    execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
-};
+use crossterm::event::{self, KeyCode};
 use ratatui::{Terminal, backend::CrosstermBackend};
-use std::io::stdout;
+use std::io::Stdout;
 use std::time::{Duration, Instant};
 
-pub fn run_app() -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let config = load_config("gjwidgets.toml");
-
-    enable_raw_mode()?;
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
 
     let mut widgets: Vec<(Box<dyn GJWidget>, Duration, Instant)> = vec![
         (
@@ -66,13 +58,6 @@ pub fn run_app() -> Result<(), Box<dyn std::error::Error>> {
 
         std::thread::sleep(Duration::from_millis(200));
     }
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
 
     Ok(())
 }

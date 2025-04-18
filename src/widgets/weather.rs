@@ -6,7 +6,7 @@ pub struct WeatherWidget {
 }
 use ratatui::{
     layout::Alignment,
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Line, Text},
     widgets::{Block, Borders, Paragraph},
 };
@@ -42,9 +42,8 @@ impl GJWidget for WeatherWidget {
     }
 
     fn render(&self) -> Paragraph {
-        let style = Style::default()
-            .fg(Color::Green)
-            .add_modifier(Modifier::ITALIC);
+        let style = Style::default().fg(Color::Blue);
+        //.add_modifier(Modifier::ITALIC);
 
         let mut text = Text::default();
         for line in self.state.lines() {
