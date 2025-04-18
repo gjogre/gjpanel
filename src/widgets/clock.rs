@@ -17,8 +17,8 @@ pub struct ClockWidget {
 
 impl ClockWidget {
     pub fn new(config: ClockConfig) -> Self {
-        let (font_time, font_date) =
-            fonts::load_fonts_with_fallback(None, None).expect("Failed to load figlet fonts");
+        let font_time = fonts::load_font_by_name_or_err("large");
+        let font_date = fonts::load_font_by_name_or_err("small");
         Self {
             font_time,
             font_date,
