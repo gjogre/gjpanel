@@ -34,7 +34,7 @@ pub fn run_app(
         }
 
         for (widget, interval, last_polled) in widgets.iter_mut() {
-            if last_polled.elapsed() >= *interval && init {
+            if last_polled.elapsed() >= *interval || init {
                 widget.poll();
                 *last_polled = Instant::now();
             }
