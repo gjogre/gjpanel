@@ -23,7 +23,7 @@ impl App {
                 Instant::now(),
             ),
             (
-                Box::new(WeatherWidget::new()),
+                Box::new(WeatherWidget::new(config.weather)),
                 Duration::from_secs(3600),
                 Instant::now(),
             ),

@@ -1,9 +1,10 @@
+use crate::fontloader;
 use crate::widgets::GJWidget;
+use crate::{config::WeatherConfig, fontloader::load_font_by_name_or_err};
 use std::env;
 use std::process::Command;
-pub struct WeatherWidget {
-    state: String,
-}
+
+use figlet_rs::FIGfont;
 use ratatui::{
     layout::Alignment,
     style::{Color, Style},
@@ -11,10 +12,19 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
+pub struct WeatherWidget {
+    config: WeatherConfig,
+    font: FIGfont,
+    state: String,
+}
+
 impl WeatherWidget {
-    pub fn new() -> Self {
+    pub fn new(config: WeatherConfig) -> Self {
+        let font = load_font_by_name_or_err(&config.font);
         Self {
             state: "Loading".to_string(),
+            config,
+            font,
         }
     }
 
@@ -46,7 +56,8 @@ impl GJWidget for WeatherWidget {
         //.add_modifier(Modifier::ITALIC);
 
         let mut text = Text::default();
-        for line in self.state.lines() {
+        let state_fig = fontloader::render_figlet_text(&self.font, &self.state);
+        for line in state_fig.to_string().lines() {
             text.lines.push(Line::styled(line.to_string(), style));
         }
 

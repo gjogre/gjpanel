@@ -18,8 +18,8 @@ pub struct ClockWidget {
 
 impl ClockWidget {
     pub fn new(config: ClockConfig) -> Self {
-        let font_time = load_font_by_name_or_err("large");
-        let font_date = load_font_by_name_or_err("small");
+        let font_time = load_font_by_name_or_err(&config.time_font);
+        let font_date = load_font_by_name_or_err(&config.date_font);
         Self {
             font_time,
             font_date,

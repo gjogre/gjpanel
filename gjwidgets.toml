@@ -1,3 +1,8 @@
 [clock]
 time_format = "%H:%M"
 date_format = "%d.%m.%Y"
+time_font = "large"
+date_font = "small"
+
+[weather]
+font = "small"

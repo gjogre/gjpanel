@@ -5,11 +5,17 @@ use std::fs;
 pub struct ClockConfig {
     pub time_format: String,
     pub date_format: String,
+    pub time_font: String,
+    pub date_font: String,
 }
-
+#[derive(Debug, Deserialize)]
+pub struct WeatherConfig {
+    pub font: String,
+}
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub clock: ClockConfig,
+    pub weather: WeatherConfig,
 }
 
 pub fn load_config(path: &str) -> Config {
