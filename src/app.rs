@@ -22,9 +22,8 @@ pub fn run_app(
             Instant::now(),
         ),
     ];
-    for (widget, _interval, _last_polled) in widgets.iter_mut() {
-        widget.poll();
-    }
+
+    let mut init = true;
     loop {
         if event::poll(Duration::from_millis(50))? {
             if let event::Event::Key(key) = event::read()? {
@@ -35,7 +34,7 @@ pub fn run_app(
         }
 
         for (widget, interval, last_polled) in widgets.iter_mut() {
-            if last_polled.elapsed() >= *interval {
+            if last_polled.elapsed() >= *interval && init {
                 widget.poll();
                 *last_polled = Instant::now();
             }
@@ -55,7 +54,7 @@ pub fn run_app(
                 f.render_widget(widget.render(), *area);
             }
         })?;
-
+        init = false;
         std::thread::sleep(Duration::from_millis(200));
     }
 
