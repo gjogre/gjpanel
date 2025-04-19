@@ -14,6 +14,8 @@ pub struct WeatherConfig {
     pub location: String,
 }
 #[derive(Debug, Deserialize)]
+pub struct WorkspacesConfig {}
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub clock: ClockConfig,
     pub weather: WeatherConfig,
