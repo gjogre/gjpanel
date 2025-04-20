@@ -5,16 +5,17 @@ use std::env;
 use std::process::Command;
 
 use figlet_rs::FIGfont;
+use ratatui::Frame;
+use ratatui::layout::Rect;
 use ratatui::{
     layout::Alignment,
     style::{Color, Style},
-    text::{Line, Text},
     widgets::{Block, Borders, Paragraph},
 };
 
 pub struct WeatherWidget {
     config: WeatherConfig,
-    font: FIGfont,
+    font: Option<FIGfont>,
     state: String,
 }
 
@@ -55,18 +56,16 @@ impl GJWidget for WeatherWidget {
         self.state = Self::fetch_weather(self.config.location.clone());
     }
 
-    fn render(&self) -> Paragraph {
+    fn render(&self, f: &mut Frame, area: Rect) {
         let style = Style::default().fg(Color::Blue);
         //.add_modifier(Modifier::ITALIC);
 
-        let mut text = Text::default();
-        let state_fig = fontloader::render_figlet_text(&self.font, &self.state);
-        for line in state_fig.to_string().lines() {
-            text.lines.push(Line::styled(line.to_string(), style));
-        }
+        let text = fontloader::to_styled_text(&self.font, &self.state, style);
 
-        Paragraph::new(text)
+        let paragraph = Paragraph::new(text)
             .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL).title("Weather"))
+            .block(Block::default().borders(Borders::ALL).title("Weather"));
+
+        f.render_widget(paragraph, area);
     }
 }

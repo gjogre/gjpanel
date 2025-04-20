@@ -5,5 +5,5 @@ time_font = "large"
 date_font = "small"
 
 [weather]
-font = "small"
+font = ""
 location = "Hyvinkää"

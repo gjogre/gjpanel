@@ -3,17 +3,18 @@ use crate::widgets::GJWidget;
 use crate::{config::ClockConfig, fontloader::load_font_by_name_or_err};
 use chrono::Local;
 use figlet_rs::FIGfont;
+use ratatui::Frame;
+use ratatui::layout::Rect;
 use ratatui::{
     layout::Alignment,
     style::{Color, Modifier, Style},
-    text::{Line, Text},
     widgets::{Block, Borders, Paragraph},
 };
 
 pub struct ClockWidget {
     pub config: ClockConfig,
-    font_time: FIGfont,
-    font_date: FIGfont,
+    font_time: Option<FIGfont>,
+    font_date: Option<FIGfont>,
 }
 
 impl ClockWidget {
@@ -29,7 +30,7 @@ impl ClockWidget {
 }
 
 impl GJWidget for ClockWidget {
-    fn render(&self) -> Paragraph {
+    fn render(&self, f: &mut Frame, area: Rect) {
         let time_style = Style {
             fg: Some(Color::Blue),
             bg: Some(Color::default()),
@@ -49,21 +50,12 @@ impl GJWidget for ClockWidget {
         let time_str = now.format(&self.config.time_format).to_string();
         let date_str = now.format(&self.config.date_format).to_string();
 
-        let time_fig = fontloader::render_figlet_text(&self.font_time, &time_str);
-        let date_fig = fontloader::render_figlet_text(&self.font_date, &date_str);
+        let text = fontloader::to_styled_text(&self.font_time, &time_str, time_style)
+            + fontloader::to_styled_text(&self.font_date, &date_str, date_style);
 
-        let mut text = Text::default();
-
-        for line in time_fig.to_string().lines() {
-            text.lines.push(Line::styled(line.to_string(), time_style));
-        }
-
-        for line in date_fig.to_string().lines() {
-            text.lines.push(Line::styled(line.to_string(), date_style));
-        }
-
-        Paragraph::new(text)
+        let paragraph = Paragraph::new(text)
             .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL))
+            .block(Block::default().borders(Borders::ALL));
+        f.render_widget(paragraph, area);
     }
 }

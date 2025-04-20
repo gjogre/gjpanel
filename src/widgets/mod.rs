@@ -1,7 +1,9 @@
+use ratatui::{Frame, layout::Rect};
+
 pub mod clock;
 pub mod weather;
 pub mod workspaces;
 pub trait GJWidget {
     fn poll(&mut self) {}
-    fn render(&self) -> ratatui::widgets::Paragraph;
+    fn render(&self, frame: &mut Frame, area: Rect);
 }

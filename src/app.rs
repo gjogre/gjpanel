@@ -43,13 +43,14 @@ impl App {
                 let chunks = ratatui::layout::Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        ratatui::layout::Constraint::Length(15),
-                        ratatui::layout::Constraint::Length(30),
+                        ratatui::layout::Constraint::Length(12),
+                        ratatui::layout::Constraint::Length(10),
                     ])
                     .split(size);
 
                 for ((widget, _, _), area) in widgets.iter().zip(chunks.iter()) {
-                    f.render_widget(widget.render(), *area);
+                    widget.render(f, *area);
+                    // f.render_widget(widget.render(), *area);
                 }
             })?;
 
