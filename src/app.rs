@@ -1,5 +1,7 @@
 use crate::config::load_config;
-use crate::widgets::{GJWidget, clock::ClockWidget, weather::WeatherWidget};
+use crate::widgets::{
+    GJWidget, clock::ClockWidget, weather::WeatherWidget, workspaces::WorkspacesWidget,
+};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::DefaultTerminal;
 use std::time::{Duration, Instant};
@@ -27,6 +29,11 @@ impl App {
                 Duration::from_secs(3600),
                 Instant::now(),
             ),
+            (
+                Box::new(WorkspacesWidget::new(config.workspaces)),
+                Duration::from_millis(100),
+                Instant::now(),
+            ),
         ];
 
         let mut init = true;
@@ -45,6 +52,7 @@ impl App {
                     .constraints(vec![
                         ratatui::layout::Constraint::Length(12),
                         ratatui::layout::Constraint::Length(10),
+                        ratatui::layout::Constraint::Length(20),
                     ])
                     .split(size);
 

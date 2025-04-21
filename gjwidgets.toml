@@ -7,3 +7,5 @@ date_font = "small"
 [weather]
 font = ""
 location = "Hyvinkää"
+
+[workspaces]

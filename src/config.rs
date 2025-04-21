@@ -13,12 +13,13 @@ pub struct WeatherConfig {
     pub font: String,
     pub location: String,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct WorkspacesConfig {}
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub clock: ClockConfig,
     pub weather: WeatherConfig,
+    pub workspaces: WorkspacesConfig,
 }
 
 pub fn load_config(path: &str) -> Config {
