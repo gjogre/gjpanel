@@ -58,32 +58,36 @@ impl App {
 
                 for ((widget, _, _), area) in widgets.iter().zip(chunks.iter()) {
                     widget.render(f, *area);
-                    // f.render_widget(widget.render(), *area);
                 }
             })?;
 
             self.handle_events()?;
             init = false;
-            std::thread::sleep(Duration::from_millis(200));
+            std::thread::sleep(Duration::from_millis(20)); // Slightly faster sleep
         }
 
         Ok(())
     }
+
     fn handle_events(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
-            }
-            _ => {}
-        };
+        if event::poll(Duration::from_millis(50))? {
+            match event::read()? {
+                Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                    self.handle_key_event(key_event)
+                }
+                _ => {}
+            };
+        }
         Ok(())
     }
+
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             _ => {}
         }
     }
+
     fn exit(&mut self) {
         self.exit = true;
     }
