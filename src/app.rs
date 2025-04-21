@@ -50,9 +50,9 @@ impl App {
                 let chunks = ratatui::layout::Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        ratatui::layout::Constraint::Length(12),
-                        ratatui::layout::Constraint::Length(10),
-                        ratatui::layout::Constraint::Length(20),
+                        ratatui::layout::Constraint::Max(10),
+                        ratatui::layout::Constraint::Max(3),
+                        ratatui::layout::Constraint::Min(20),
                     ])
                     .split(size);
 

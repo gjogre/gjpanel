@@ -55,7 +55,7 @@ impl GJWidget for ClockWidget {
 
         let paragraph = Paragraph::new(text)
             .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL));
+            .block(Block::default().borders(Borders::NONE));
         f.render_widget(paragraph, area);
     }
 }

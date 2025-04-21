@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction},
+    layout::{Alignment, Constraint, Direction, Rect},
     style::{Color, Style},
     widgets::{Block, BorderType, Borders, Paragraph},
 };
@@ -113,24 +113,33 @@ impl WorkspacesWidget {
 
 impl GJWidget for WorkspacesWidget {
     fn render(&self, frame: &mut ratatui::Frame, area: ratatui::prelude::Rect) {
-        // Group by monitor_id
         let mut grouped: BTreeMap<u32, Vec<Workspace>> = BTreeMap::new();
         for ws in &self.workspaces {
-            grouped.entry(ws.monitor_id).or_default().push(ws.clone());
+            let group = if ws.id < 0 { 10 } else { ws.monitor_id };
+            grouped.entry(group as u32).or_default().push(ws.clone());
         }
+        let column_width = 12;
 
-        let column_constraints = vec![Constraint::Length(12); grouped.len()];
+        let column_start = column_width * grouped.len() as u16;
+        let outer_block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Double);
+
+        let inner_area = outer_block.inner(area);
+
+        frame.render_widget(outer_block, area);
+
+        let column_constraints = vec![Constraint::Length(column_start); grouped.len()];
         let columns = ratatui::layout::Layout::default()
             .direction(Direction::Horizontal)
             .constraints(column_constraints)
-            .split(area);
+            .split(inner_area);
 
-        for (i, (_monitor_id, column_workspaces)) in grouped.iter().enumerate() {
-            let column_height = column_workspaces.len();
-            let rows = ratatui::layout::Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(vec![Constraint::Length(3); column_height])
-                .split(columns[i]);
+        for (i, (_monitor_id, column_workspaces)) in grouped.iter().rev().enumerate() {
+            let mut column_workspaces = column_workspaces.clone();
+            column_workspaces.sort_by_key(|ws| ws.id);
+            let column_area = columns[i];
+            let block_height = 3 as u16;
 
             for (j, ws) in column_workspaces.iter().enumerate() {
                 let block = Block::default()
@@ -140,13 +149,20 @@ impl GJWidget for WorkspacesWidget {
                         Style::default().fg(Color::Magenta)
                     } else {
                         Style::default().fg(Color::Gray)
+                    })
+                    .title(if ws.id.to_string() != ws.name {
+                        ws.name.clone()
+                    } else {
+                        String::new()
                     });
 
                 let paragraph = Paragraph::new(ws.id.to_string())
                     .alignment(Alignment::Center)
                     .block(block);
+                let y = column_area.bottom() - (j as u16 + 1) * block_height;
+                let rect = Rect::new(column_area.x, y, column_area.width, block_height);
 
-                frame.render_widget(paragraph, rows[j]);
+                frame.render_widget(paragraph, rect);
             }
         }
     }

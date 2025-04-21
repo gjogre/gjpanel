@@ -64,7 +64,7 @@ impl GJWidget for WeatherWidget {
 
         let paragraph = Paragraph::new(text)
             .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::ALL).title("Weather"));
+            .block(Block::default().borders(Borders::ALL));
 
         f.render_widget(paragraph, area);
     }
