@@ -1,6 +1,7 @@
 use ratatui::{Frame, layout::Rect};
 
 pub mod clock;
+pub mod sysinfo;
 pub mod weather;
 pub mod workspaces;
 pub trait GJWidget {

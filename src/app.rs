@@ -1,4 +1,6 @@
 use crate::config::load_config;
+use crate::logger::Logger;
+use crate::widgets::sysinfo::SysInfoWidget;
 use crate::widgets::{
     GJWidget, clock::ClockWidget, weather::WeatherWidget, workspaces::WorkspacesWidget,
 };
@@ -15,6 +17,7 @@ impl App {
     pub fn run_app(
         &mut self,
         terminal: &mut DefaultTerminal,
+        logger: &'static Logger,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let config = load_config("gjwidgets.toml");
 
@@ -25,13 +28,18 @@ impl App {
                 Instant::now(),
             ),
             (
-                Box::new(WeatherWidget::new(config.weather)),
+                Box::new(WeatherWidget::new(config.weather, logger)),
                 Duration::from_secs(3600),
                 Instant::now(),
             ),
             (
-                Box::new(WorkspacesWidget::new(config.workspaces)),
+                Box::new(WorkspacesWidget::new(config.workspaces, logger)),
                 Duration::from_millis(100),
+                Instant::now(),
+            ),
+            (
+                Box::new(SysInfoWidget::new(logger)),
+                Duration::from_secs(2),
                 Instant::now(),
             ),
         ];
@@ -50,8 +58,9 @@ impl App {
                 let chunks = ratatui::layout::Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        ratatui::layout::Constraint::Max(10),
+                        ratatui::layout::Constraint::Min(13),
                         ratatui::layout::Constraint::Max(3),
+                        ratatui::layout::Constraint::Min(19),
                         ratatui::layout::Constraint::Min(20),
                     ])
                     .split(size);
@@ -61,7 +70,7 @@ impl App {
                 }
             })?;
 
-            self.handle_events()?;
+            self.handle_events(logger)?;
             init = false;
             std::thread::sleep(Duration::from_millis(20)); // Slightly faster sleep
         }
@@ -69,11 +78,11 @@ impl App {
         Ok(())
     }
 
-    fn handle_events(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    fn handle_events(&mut self, logger: &Logger) -> Result<(), Box<dyn std::error::Error>> {
         if event::poll(Duration::from_millis(50))? {
             match event::read()? {
                 Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                    self.handle_key_event(key_event)
+                    self.handle_key_event(key_event, logger)
                 }
                 _ => {}
             };
@@ -81,14 +90,15 @@ impl App {
         Ok(())
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, key_event: KeyEvent, logger: &Logger) {
         match key_event.code {
-            KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('q') => self.exit(logger),
             _ => {}
         }
     }
 
-    fn exit(&mut self) {
+    fn exit(&mut self, logger: &Logger) {
+        logger.info("Exiting application");
         self.exit = true;
     }
 }

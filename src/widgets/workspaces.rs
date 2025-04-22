@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Rect},
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Padding, Paragraph},
 };
 use std::sync::mpsc::Sender;
 use std::{
@@ -17,7 +17,7 @@ use std::{
 };
 
 use super::GJWidget;
-use crate::config::WorkspacesConfig;
+use crate::{config::WorkspacesConfig, logger::Logger};
 
 #[derive(Debug, Clone)]
 pub struct Workspace {
@@ -26,6 +26,7 @@ pub struct Workspace {
     monitor_id: u32,
     active: bool,
 }
+
 #[derive(Debug)]
 pub struct ActiveWorkspace {
     id: i32,
@@ -38,10 +39,11 @@ pub struct WorkspacesWidget {
     tx_workspace: Option<std::sync::mpsc::Sender<Vec<Workspace>>>,
     rx_workspace: Option<std::sync::mpsc::Receiver<Vec<Workspace>>>,
     rx_event: Option<std::sync::mpsc::Receiver<()>>,
+    logger: &'static Logger,
 }
 
 impl WorkspacesWidget {
-    pub fn new(config: WorkspacesConfig) -> Self {
+    pub fn new(config: WorkspacesConfig, logger: &'static Logger) -> Self {
         let (tx_workspace, rx_workspace) = mpsc::channel::<Vec<Workspace>>();
         Self {
             config,
@@ -50,6 +52,7 @@ impl WorkspacesWidget {
             tx_workspace: Some(tx_workspace),
             rx_workspace: Some(rx_workspace),
             rx_event: None,
+            logger,
         }
     }
 
@@ -82,7 +85,9 @@ impl WorkspacesWidget {
                     if !block.trim().is_empty() {
                         match Workspace::from_str(block) {
                             Ok(wsp) => results.push(wsp),
-                            Err(e) => eprintln!("Error parsing workspace block in fetch: {}", e),
+                            Err(e) => self
+                                .logger
+                                .error(&format!("Error parsing workspace block in fetch: {}", e)),
                         }
                     }
                 }
@@ -100,7 +105,8 @@ impl WorkspacesWidget {
                 match ActiveWorkspace::from_str(&output_str) {
                     Ok(active_ws) => Ok(Some(active_ws.id)),
                     Err(e) => {
-                        eprintln!("Error parsing active workspace: {}", e);
+                        self.logger
+                            .error(&format!("Error parsing active workspace: {}", e));
                         Ok(None)
                     }
                 }
@@ -122,8 +128,9 @@ impl GJWidget for WorkspacesWidget {
 
         let column_start = column_width * grouped.len() as u16;
         let outer_block = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Double);
+            .borders(Borders::NONE)
+            .border_type(BorderType::Double)
+            .padding(Padding::bottom(2));
 
         let inner_area = outer_block.inner(area);
 
@@ -144,11 +151,11 @@ impl GJWidget for WorkspacesWidget {
             for (j, ws) in column_workspaces.iter().enumerate() {
                 let block = Block::default()
                     .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded)
+                    .border_type(BorderType::Thick)
                     .border_style(if ws.active {
-                        Style::default().fg(Color::Magenta)
+                        Style::default().fg(Color::Blue)
                     } else {
-                        Style::default().fg(Color::Gray)
+                        Style::default().fg(Color::DarkGray)
                     })
                     .title(if ws.id.to_string() != ws.name {
                         ws.name.clone()
@@ -177,14 +184,15 @@ impl GJWidget for WorkspacesWidget {
             self.rx_workspace = Some(workspace_rx);
 
             let tx_workspaces = self.tx_workspace.clone();
+            let logger = self.logger;
 
             std::thread::spawn(move || {
                 let mut socket = HyprSocketWorker {
                     event_tx,
                     tx: tx_workspaces.expect("Workspace sender should be initialized"),
                 };
-                if let Err(e) = socket.connect_hyprland_socket() {
-                    eprintln!("Socket error in thread: {}", e);
+                if let Err(e) = socket.connect_hyprland_socket(logger) {
+                    logger.error(&format!("Socket error in thread: {}", e));
                 }
             });
 
@@ -212,13 +220,13 @@ struct HyprSocketWorker {
 }
 
 trait HyprSocket {
-    fn connect_hyprland_socket(&mut self) -> Result<(), String>;
+    fn connect_hyprland_socket(&mut self, logger: &Logger) -> Result<(), String>;
     fn handle_socket_event(&mut self, line: &str);
-    fn set_workspaces(&mut self) -> Result<Vec<Workspace>, String>;
+    fn set_workspaces(&mut self, logger: &Logger) -> Result<Vec<Workspace>, String>;
 }
 
 impl HyprSocket for HyprSocketWorker {
-    fn connect_hyprland_socket(&mut self) -> Result<(), String> {
+    fn connect_hyprland_socket(&mut self, logger: &Logger) -> Result<(), String> {
         let xdg_runtime_dir = env::var("XDG_RUNTIME_DIR").expect("XDG_RUNTIME_DIR is not set");
         let hyprland_instance_signature = env::var("HYPRLAND_INSTANCE_SIGNATURE")
             .expect("HYPRLAND_INSTANCE_SIGNATURE is not set");
@@ -234,10 +242,10 @@ impl HyprSocket for HyprSocketWorker {
 
         let reader = BufReader::new(stream);
 
-        if let Ok(workspaces) = self.set_workspaces() {
+        if let Ok(workspaces) = self.set_workspaces(logger) {
             let _ = self.tx.send(workspaces);
         } else {
-            eprintln!("HyprSocketWorker initial workspace fetch failed.");
+            logger.error("HyprSocketWorker initial workspace fetch failed.");
         }
 
         for line in reader.lines() {
@@ -245,11 +253,12 @@ impl HyprSocket for HyprSocketWorker {
                 Ok(line) => {
                     self.handle_socket_event(&line);
                 }
-                Err(e) => eprintln!("Failed to read line from socket: {}", e),
+                Err(e) => logger.error(&format!("Failed to read line from socket: {}", e)),
             }
         }
         Ok(())
     }
+
     fn handle_socket_event(&mut self, line: &str) {
         match line {
             l if l.starts_with("workspace>>")
@@ -261,7 +270,8 @@ impl HyprSocket for HyprSocketWorker {
             _ => {}
         }
     }
-    fn set_workspaces(&mut self) -> Result<Vec<Workspace>, String> {
+
+    fn set_workspaces(&mut self, logger: &Logger) -> Result<Vec<Workspace>, String> {
         let mut results = Vec::new();
         match Command::new("hyprctl").arg("workspaces").output() {
             Ok(output) if output.status.success() => {
@@ -273,7 +283,10 @@ impl HyprSocket for HyprSocketWorker {
                         match Workspace::from_str(block) {
                             Ok(wsp) => results.push(wsp),
                             Err(e) => {
-                                eprintln!("HyprSocketWorker error parsing workspace block: {}", e)
+                                logger.error(&format!(
+                                    "HyprSocketWorker error parsing workspace block: {}",
+                                    e
+                                ));
                             }
                         }
                     }
@@ -282,10 +295,10 @@ impl HyprSocket for HyprSocketWorker {
             }
             Ok(_) => Err("'hyprctl workspaces' failed.".to_string()),
             Err(err) => {
-                eprintln!(
+                logger.error(&format!(
                     "HyprSocketWorker error executing 'hyprctl workspaces': {}",
                     err
-                );
+                ));
                 Err(format!(
                     "HyprSocketWorker error executing 'hyprctl workspaces': {}",
                     err
@@ -310,7 +323,7 @@ impl FromStr for Workspace {
                     if let Ok(parsed_id) = parts[2].parse::<i32>() {
                         id = parsed_id;
                     } else {
-                        eprintln!("Error parsing workspace ID: {}", parts[2]);
+                        return Err(format!("Error parsing workspace ID: {}", parts[2]));
                     }
                     if parts[3].starts_with('(') && parts[3].ends_with(')') {
                         name = parts[3][1..parts[3].len() - 1].to_string();
@@ -318,7 +331,7 @@ impl FromStr for Workspace {
                         name = parts[2].to_string();
                     }
                 } else {
-                    eprintln!("Error parsing workspace ID line: Not enough parts");
+                    return Err("Error parsing workspace ID line: Not enough parts".to_string());
                 }
             } else if line.starts_with("\tmonitorID:") {
                 let parts: Vec<&str> = line.split(':').collect();
@@ -326,7 +339,7 @@ impl FromStr for Workspace {
                     if let Ok(parsed_monitor_id) = parts[1].trim().parse::<u32>() {
                         monitor_id = parsed_monitor_id;
                     } else {
-                        eprintln!("Error parsing '\\tmonitorID:' value");
+                        return Err("Error parsing '\\tmonitorID:' value".to_string());
                     }
                 }
             } else if line.starts_with("\tactive:") {

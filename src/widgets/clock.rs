@@ -5,6 +5,7 @@ use chrono::Local;
 use figlet_rs::FIGfont;
 use ratatui::Frame;
 use ratatui::layout::Rect;
+use ratatui::widgets::Padding;
 use ratatui::{
     layout::Alignment,
     style::{Color, Modifier, Style},
@@ -53,9 +54,11 @@ impl GJWidget for ClockWidget {
         let text = fontloader::to_styled_text(&self.font_time, &time_str, time_style)
             + fontloader::to_styled_text(&self.font_date, &date_str, date_style);
 
-        let paragraph = Paragraph::new(text)
-            .alignment(Alignment::Center)
-            .block(Block::default().borders(Borders::NONE));
+        let paragraph = Paragraph::new(text).alignment(Alignment::Center).block(
+            Block::default()
+                .borders(Borders::NONE)
+                .padding(Padding::top(5)),
+        );
         f.render_widget(paragraph, area);
     }
 }
