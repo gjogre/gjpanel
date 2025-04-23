@@ -33,34 +33,32 @@ impl WeatherWidget {
     }
 
     fn fetch_weather(location: String, logger: &'static Logger) -> String {
-        match Command::new("sh")
+        let output = Command::new("sh")
             .arg("-c")
             .arg(format!("./sh/weather.sh {}", location))
-            .output()
-        {
+            .output();
+
+        match output {
             Ok(output) if output.status.success() => {
                 String::from_utf8_lossy(&output.stdout).trim().to_string()
             }
             Ok(output) => {
-                logger.error(&format!(
-                    "⚠️ Script error: {}\nscript path: {}",
+                let error_message = format!(
+                    "Weather script error: {}\nscript path: {}",
                     String::from_utf8_lossy(&output.stderr),
                     env::current_dir().unwrap().to_string_lossy(),
-                ));
-                format!(
-                    "⚠️ Script error: {}\nscript path: {}",
-                    String::from_utf8_lossy(&output.stderr),
-                    env::current_dir().unwrap().to_string_lossy(),
-                )
+                );
+                logger.error(&error_message);
+                error_message
             }
             Err(err) => {
-                logger.error(&format!("⚠️ Exec failed: {}", err));
-                format!("⚠️ Exec failed: {}", err)
+                let error_message = format!("Weather scriptexec failed: {}", err);
+                logger.error(&error_message);
+                error_message
             }
         }
     }
 }
-
 impl GJWidget for WeatherWidget {
     fn poll(&mut self) {
         self.state = Self::fetch_weather(self.config.location.clone(), self.logger);
