@@ -35,24 +35,23 @@ impl WeatherWidget {
     fn fetch_weather(location: String, logger: &'static Logger) -> String {
         let output = Command::new("sh")
             .arg("-c")
-            .arg(format!("./sh/weather.sh {}", location))
-            .output();
+            .arg(format!(
+                "curl -s wttr.in/{}?format=%c+%t+%w+%m+%p",
+                location
+            ))
+            .output()
+            .expect("Failed to run weather command");
 
         match output {
-            Ok(output) if output.status.success() => {
+            output if output.status.success() => {
                 String::from_utf8_lossy(&output.stdout).trim().to_string()
             }
-            Ok(output) => {
+            output => {
                 let error_message = format!(
                     "Weather script error: {}\nscript path: {}",
                     String::from_utf8_lossy(&output.stderr),
                     env::current_dir().unwrap().to_string_lossy(),
                 );
-                logger.error(&error_message);
-                error_message
-            }
-            Err(err) => {
-                let error_message = format!("Weather scriptexec failed: {}", err);
                 logger.error(&error_message);
                 error_message
             }

@@ -167,7 +167,7 @@ impl GJWidget for SysInfoWidget {
                     .borders(Borders::NONE)
                     .title(self.kernel_version.clone())
                     .title_style(Style::new().dark_gray().on_black())
-                    .title_alignment(Alignment::Right)
+                    .title_alignment(Alignment::Left)
                     .padding(Padding::top(2)),
             )
             .direction(ratatui::layout::Direction::Horizontal)
